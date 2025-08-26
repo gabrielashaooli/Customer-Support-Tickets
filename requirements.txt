@@ -1,0 +1,12 @@
+streamlit
+spacy
+tensorflow
+nltk
+numpy
+pandas
+scikit-learn
+gensim
+joblib
+plotly
+langchain
+openai
