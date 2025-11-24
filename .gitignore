@@ -1,0 +1,30 @@
+# Entornos virtuales
+venv/
+ENV/
+.env
+.venv/
+.venv
+
+# Archivos temporales / caché
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.pickle
+
+# Archivos de modelos
+*.h5
+*.pkl
+*.joblib
+
+# Archivos de datos grandes
+*.csv
+*.tsv
+*.xlsx
+
+# Configuraciones locales
+.DS_Store
+.idea/
+.vscode/
+*.log
