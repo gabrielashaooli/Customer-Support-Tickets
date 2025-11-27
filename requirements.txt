@@ -16,3 +16,15 @@ openai
 gensim
 scikit-learn
 joblib
+
+streamlit
+spacy
+tensorflow==2.12.0
+gensim
+nltk
+numpy==1.23.5
+pandas
+plotly
+scikit-learn==1.2.2
+joblib
+openai
