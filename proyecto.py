@@ -22,14 +22,11 @@ from sklearn.svm import SVC
 import pandas as pd
 import plotly.express as px
 
-# 🔹 Usamos directamente la librería oficial de OpenAI (sin LangChain)
+# Usamos directamente la librería oficial de OpenAI 
 from openai import OpenAI
 
-# ---------------------------------------------------------------------
-# PARCHE PARA CARGAR tokenizer.pkl ANTIGUO (keras.src.*) CON TENSORFLOW MODERNO
-# ---------------------------------------------------------------------
 try:
-    import keras  # type: ignore
+    import keras 
 except ModuleNotFoundError:
     keras = types.ModuleType("keras")
     keras.__dict__.update(tf_keras.__dict__)
@@ -58,7 +55,7 @@ except LookupError:
     lemmatizer = WordNetLemmatizer()
 
 # ---------------------------------------------------------------------
-# CARGA DEL MODELO DE spaCy (SI ESTÁ INSTALADO)
+# CARGA DEL MODELO DE spaCy 
 # ---------------------------------------------------------------------
 try:
     nlp = spacy.load('en_core_web_lg')
@@ -119,12 +116,12 @@ def predecir(modelo, texto: str) -> dict:
     """
     base_vec = vectorizar(texto)  # 1D, largo = DIM_W2V
 
-    # 🔹 Modelos Keras (FNN / CNN)
+    # Modelos Keras (FNN / CNN)
     if isinstance(modelo, tf.keras.Model):
         input_shape = modelo.input_shape  # p.ej. (None, 300) o (None, 100, 1)
         rank = len(input_shape)
 
-        # FNN: input_shape ~ (None, input_dim)
+        # FNN
         if rank == 2:
             input_dim = input_shape[1]
             x = np.zeros((1, input_dim), dtype=np.float32)
@@ -132,15 +129,14 @@ def predecir(modelo, texto: str) -> dict:
             x[0, :L] = base_vec[:L]
             probs = modelo.predict(x, verbose=0)[0]
 
-        # CNN: input_shape ~ (None, seq_len, channels)
+        # CNN
         elif rank == 3:
             seq_len = input_shape[1]
             channels = input_shape[2]
             x = np.zeros((1, seq_len, channels), dtype=np.float32)
 
-            flat = base_vec  # 1D
+            flat = base_vec  
             if channels == 1:
-                # metemos el vector a lo largo de la dimensión temporal
                 L = min(flat.size, seq_len)
                 x[0, :L, 0] = flat[:L]
             else:
@@ -156,12 +152,12 @@ def predecir(modelo, texto: str) -> dict:
             x = base_vec.reshape(1, -1)
             probs = modelo.predict(x, verbose=0)[0]
 
-    # 🔹 Modelos sklearn con predict_proba (SVM, etc.)
+    # Modelos sklearn con predict_proba (SVM, etc.)
     elif hasattr(modelo, "predict_proba"):
         x = base_vec.reshape(1, -1)
         probs = modelo.predict_proba(x)[0]
 
-    # 🔹 Fallback genérico
+    # Fallback genérico
     else:
         x = base_vec.reshape(1, -1)
         y = modelo.predict(x)
@@ -257,7 +253,6 @@ opcion = st.sidebar.selectbox(
         "N-Gramas",
         "T-SNE",
         "Modelos",
-        "Generador de texto",
         "ChatGPT",
         "Marco legal y técnico"
     )
@@ -267,8 +262,9 @@ opcion = st.sidebar.selectbox(
 # INICIO
 # ---------------------------------------------------------------------
 if opcion == "Inicio":
-    st.header("Proyecto de Integración Tecnológica – Atención a Clientes con IA")
-
+    st.header("Proyecto de Integración Tecnológica Atención a Clientes con IA")
+    st.markdown("""Luis Atristain Alfaro, Efren Flores Porras, Gabriela Shaooli Cassab, Carlo Folgori Jacobo, Patricio Fernández Paillés, Oscar Rodríguez Alcántara y Miguel Angel Zamora del Castillo 
+""")
     st.subheader("Descripción general")
     st.write("""
 Este proyecto implementa un sistema de **Procesamiento de Lenguaje Natural (PLN)** para clasificar
@@ -303,8 +299,7 @@ La idea central es que la empresa pueda:
 5. **Interfaz con Streamlit (esta app)**  
    - Clasificación de un mensaje individual.  
    - Clasificación masiva vía CSV.  
-   - Visualización de N-Gramas y T-SNE.  
-   - Generador de texto.  
+   - Visualización de N-Gramas y T-SNE.    
    - Módulo de ChatGPT especializado en atención al cliente.
     """)
 
@@ -383,11 +378,11 @@ elif opcion == "Modelos":
 
     modelo_cargado = None
 
-# 🔹 Modelos de redes neuronales (FNN / CNN)
+# Modelos de redes neuronales (FNN / CNN)
     if "Red neuronal" in nombre_modelo:
         modelo_cargado = tf.keras.models.load_model(ruta_modelo)
 
-# 🔹 Árbol de decisión (DT) – aquí sí dejamos el mensaje de compatibilidad
+# Árbol de decisión (DT)
     elif "Árbol" in nombre_modelo:
         try:
             modelo_cargado = joblib.load(ruta_modelo)
@@ -398,7 +393,7 @@ elif opcion == "Modelos":
         )
             st.stop()
 
-# 🔹 SVM – intentamos cargar normalmente (porque ya viste que te funciona)
+# SVM 
     elif "SVM" in nombre_modelo:
         try:
             modelo_cargado = joblib.load(ruta_modelo)
@@ -595,202 +590,224 @@ elif opcion == "Marco legal y técnico":
     st.header("Marco legal y técnico – Evaluación integral del proyecto")
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "Objeto y alcance",
-        "Marco normativo",
-        "Arquitectura y controles",
-        "POE, roles y gobernanza",
-        "Reflexión final"
+        "Naturaleza jurídica",
+        "Datos personales (LFPDPPP)",
+        "Transparencia y AI Act",
+        "Sesgos y gobernanza",
+        "Ética, riesgos y conclusiones"
     ])
 
+    # ---------------- TAB 1: Naturaleza jurídica ----------------
     with tab1:
-        st.subheader("1. Objeto y alcance del sistema")
-        st.write("""
-El sistema clasifica mensajes de clientes en 11 categorías predefinidas usando PLN:
-
-- ACCOUNT, ORDER, REFUND, INVOICE, PAYMENT  
-- FEEDBACK, CONTACT, SHIPPING_ADDRESS, DELIVERY  
-- CANCELLATION_FEE, NEWSLETTER  
-
-**Alcance funcional:**
-
-- Módulo de preprocesamiento (limpieza, tokenización, lematización, stopwords).
-- Módulo de vectorización (Word2Vec 300d, TF-IDF en la etapa de entrenamiento).
-- Módulo de clasificación (modelos clásicos + redes neuronales).
-- Interfaz de usuario en Streamlit (esta app), que permite:
-  - Clasificar un mensaje individual.
-  - Clasificar archivos CSV completos.
-  - Visualizar N-Gramas y T-SNE.
-  - Probar un generador de texto.
-  - Integrar ChatGPT como asistente especializado.
-
-**Hipótesis:** la clasificación automática, con supervisión humana, mejora la gestión de tickets,
-reduce carga operativa y aumenta la satisfacción de las personas usuarias.
+        st.subheader("Naturaleza Jurídica del Sistema")
+        st.markdown("""
+- El sistema **clasifica mensajes**, no toma decisiones autónomas.
+- Carece de voluntad: **no puede obligarse, consentir ni generar efectos jurídicos directos**.
+- Su uso requiere **validación humana constante**.
+- Es un sistema **asistencial**, no operativo ni decisorio.
+- No puede generar obligaciones a favor de terceros ni responsabilidad por actos propios de manera autónoma.
         """)
 
+        st.subheader("Clasificación regulatoria (UE – AI Act)")
+        st.markdown("""
+- Clasificado como sistema de **“riesgo limitado”** (art. 25 AI Act).
+- No impacta derechos legales o económicos de forma autónoma.
+- Obligaciones clave:
+  - **Transparencia** ante usuarios y operadores.
+  - **Información suficiente** para entender la salida del sistema.
+  - **Gobernanza proporcional** al riesgo.
+        """)
+
+        st.subheader("Marco mexicano aplicable")
+        st.markdown("""
+Ante la ausencia de una ley específica de IA en México, se toma como base:
+
+- **Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP)**  
+- **Responsabilidad civil y de producto**
+- **Principios constitucionales de derechos humanos**
+
+Esto permite:
+- Delimitar la responsabilidad del **proveedor**, del **operador** y de la **empresa usuaria**.
+- Enmarcar el uso del sistema dentro de deberes de **cuidado, diligencia y no discriminación**.
+        """)
+
+    # ---------------- TAB 2: Protección de datos (LFPDPPP) ----------------
     with tab2:
-        st.subheader("2. Marco normativo de referencia")
+        st.subheader("Protección de Datos Personales (LFPDPPP)")
+
+        st.markdown("### Principios esenciales aplicables")
         st.markdown("""
-**2.1 Unión Europea – EU AI Act (Reg. 2024/1689)**  
-
-El sistema se considera de **riesgo limitado**, pero adopta como *mejores prácticas* varios
-requisitos de sistemas de alto riesgo, de forma proporcional:
-
-- Transparencia e instrucciones de uso.
-- Supervisión humana y mecanismo de *override / stop button*.
-- Exactitud, robustez y ciberseguridad.
-- Registro y trazabilidad de eventos (logs).
-- Sistema de Gestión de Calidad (QMS) y documentación técnica.
-
-**2.2 Estados Unidos – DHS AI Roles & Responsibilities Framework**
-
-Se toman como referencia los ejes de:
-
-- Diseño responsable y centrado en la persona.
-- Gobernanza de datos y gestión de accesos.
-- Despliegue seguro, monitoreo y TEVV (Testing, Evaluation, Verification and Validation).
-- Planes de respuesta ante incidentes relacionados con IA.
-
-**2.3 México – Protección de datos personales**
-
-Se considera la **Ley Federal de Protección de Datos Personales en Posesión de los Particulares**:
-
-- Principio de minimización de datos (solo lo estrictamente necesario).
-- Aviso de privacidad que informe el uso de IA y fines de entrenamiento/mejora.
-- Respeto de los derechos ARCO (Acceso, Rectificación, Cancelación y Oposición).
-- Medidas de seguridad para resguardar confidencialidad e integridad de los datos.
+- **Aviso de privacidad** claro y accesible.
+- **Consentimiento expreso** o mediante signos inequívocos.
+- Garantía plena de **Derechos ARCO** (Acceso, Rectificación, Cancelación y Oposición).
+- **Trazabilidad** del uso del sistema para:
+  - Proteger al desarrollador y operadores.
+  - Evidenciar buen uso frente a autoridades y usuarios.
         """)
 
+        st.markdown("### Obligaciones del artículo 19 LFPDPPP")
+        st.markdown("""
+**Medidas administrativas, técnicas y físicas**, por ejemplo:
+
+- Controles de acceso por **roles**.
+- **Cifrado** de datos en tránsito y en reposo.
+- Eliminación **segura** de datos tras su uso.
+- **Minimización** de datos y, cuando sea posible, procesamiento local o pseudonimizado.
+
+El aviso de privacidad debe informar:
+
+- El **uso de IA** para clasificar mensajes.
+- La existencia de un módulo de **XAI** (explicabilidad) para atender solicitudes de información.
+- La base de licitud del tratamiento:
+  - Ordenamiento jurídico válido,
+  - Consentimiento informado,
+  - O relación jurídica previa con la persona usuaria.
+        """)
+
+    # ---------------- TAB 3: Transparencia y documentación (AI Act) ----------------
     with tab3:
-        st.subheader("3. Arquitectura técnica y controles por requisito")
+        st.subheader("Transparencia y Documentación (AI Act)")
+
+        st.markdown("### Requisitos internacionales (art. 13, 14, 52 AI Act)")
         st.markdown("""
-### 3.1 Datos y arquitectura de PLN
+El sistema debe garantizar:
 
-- Dataset de ~6,939 registros con: `utterance`, `intent`, `category`.
-- 11 categorías globales.
-- División 70/15/15 estratificada (train/validation/test).
-- Preprocesamiento: minúsculas, limpieza, tokenización, stopwords, lematización (NLTK + spaCy).
-- Representación: TF-IDF (uni/bi/tri-gramas) y embeddings (Word2Vec / spaCy 300d).
-- Modelos: SVM, Regresión Logística, Árbol, Random Forest, FNN, CNN.
-- Métricas: F1 macro, accuracy, matriz de confusión; validación cruzada y early stopping.
+- Identidad del **proveedor** y del responsable.
+- **Finalidad** y límites del sistema de clasificación.
+- **Métricas de exactitud y desempeño** comunicadas de forma comprensible.
+- **Revisión humana garantizada** en el flujo operativo.
 
-### 3.2 Controles alineados al AI Act y al DHS Framework
-
-**Trazabilidad y registro de eventos (logs)**  
-En una versión productiva se propone almacenar, por predicción:
-
-- Timestamp, versión de modelo y dataset.
-- Hash o referencia pseudonimizada del input.
-- Categoría predicha + probabilidades.
-- Variables explicativas (XAI cuando se integre).
-- Usuario/agente revisor y acción resultante.
-
-**Transparencia e instrucciones de uso**
-
-- Manual de uso del modelo:
-  - Propósito, proveedor y equipo.
-  - Métricas de desempeño por versión.
-  - Limitaciones y supuestos.
-  - Requisitos de datos de entrada.
-  - Escenarios de mal uso previsibles.
-- Aviso de privacidad y Términos y Condiciones:
-  - Uso de IA en la atención.
-  - Derecho a explicación y revisión humana.
-
-**Supervisión humana y override**
-
-- Diseño orientado a mantener siempre a un humano en el ciclo (*human in the loop*):
-  - El modelo **solo sugiere** categorías; la decisión final la toma un agente.
-  - Casos de baja confianza se desvían automáticamente a revisión humana.
-  - Políticas internas para “ignorar” o revertir salidas del modelo.
-
-**Exactitud, robustez y ciberseguridad**
-
-- Evaluación periódica de F1 macro, accuracy y sesgo por categoría.
-- Estrategias de fallback (si el modelo falla → revisar manualmente).
-- Buenas prácticas de ciberseguridad:
-  - Control de accesos a pesos, datasets y código.
-  - Monitoreo de actividad inusual (posible poisoning o abuso).
         """)
 
+        st.markdown("### Implementación en nuestro sistema")
+        st.markdown("""
+- Interfaz **intuitiva**, con indicadores de contexto (palabras clave, categorías).
+- Información clara sobre:
+  - Qué hace el sistema,
+  - Qué no hace,
+  - Y cómo debe usarse correctamente.
+- **Manual de uso** para operadores y auditores, que incluya:
+  - Propósito y alcance,
+  - Limitaciones técnicas,
+  - Requisitos del sistema,
+  - Mecanismos de revisión humana,
+  - Métricas y umbrales de desempeño aceptable.
+- Un módulo de **XAI** previsto para:
+  - Dar trazabilidad de cada clasificación,
+  - Explicar factores que influyeron en la decisión del modelo.
+        """)
+
+    # ---------------- TAB 4: Sesgos, actualización y gobernanza ----------------
     with tab4:
-        st.subheader("4. Procedimientos operativos, roles y gobernanza")
+        st.subheader("Mitigación de Sesgos")
+
+        st.markdown("### Riesgos potenciales")
         st.markdown("""
-### 4.1 Procedimientos operativos estándar (POE)
-
-- **POE-Datos y Privacidad**
-  - Anonimización y minimización antes del entrenamiento.
-  - No almacenar datos sensibles ni identificadores directos.
-  - Auditorías periódicas de integridad de datasets.
-
-- **POE-Evaluación y Robustez**
-  - TEVV por versión (pruebas de fiabilidad y robustez).
-  - Reentrenamiento con datos recientes cuando haya *drift*.
-  - Registro de métricas y umbrales mínimos aceptables.
-
-- **POE-Transparencia y XAI**
-  - Registro de predicción + probabilidad por instancia.
-  - Módulo XAI para explicar palabras o vectores influyentes.
-  - Mensajes claros al usuario sobre el uso de IA.
-
-- **POE-Supervisión Humana**
-  - Políticas claras de revisión humana obligatoria en casos dudosos.
-  - Botón de “parar” el sistema o desactivarlo en caso de incidente.
-
-- **POE-Sesgo y Equidad**
-  - Revisiones semestrales de sesgo en el comportamiento del modelo.
-  - Análisis de lenguaje, expresiones coloquiales y regionalismos.
-
-- **POE-Incidentes**
-  - Plan de respuesta a incidentes con IA:
-    - Detección, contención, escalamiento, lecciones aprendidas.
-
-### 4.2 Matriz de roles y responsabilidades
-
-- **Equipo de desarrollo (AI Developers)**
-  - Entrenamiento de modelos, documentación técnica.
-  - Gestión de acceso a código, pesos y datos.
-  - Soporte en auditorías técnicas.
-
-- **Operadores / Empresa usuaria**
-  - Uso responsable del sistema.
-  - Ciberhigiene, supervisión humana, formación de la plantilla.
-  - Implementación de los POE en la operación diaria.
-
-- **AI Compliance Officer**
-  - Coordinación técnico–legal–ética.
-  - Mantenimiento del Manual de Gobernanza Algorítmica.
-  - Seguimiento de cambios normativos y alineación del sistema.
-
-- **Equipo jurídico**
-  - Verificación de cumplimiento normativo.
-  - Revisión de avisos de privacidad, contratos y términos de uso.
-
-- **Gestión de calidad (QMS)**
-  - Registro de versiones de modelos y datasets.
-  - Evidencias de verificación y validación.
-  - Monitoreo post-despliegue y reporting.
+- Sesgos **lingüísticos**: regionalismos, variaciones dialectales, expresiones coloquiales.
+- Riesgos de **discriminación indirecta** (trato desigual a ciertos grupos).
+- Riesgos legales:
+  - **Responsabilidad penal** en casos extremos,
+  - **Daño moral**,
+  - **Responsabilidad civil** frente a personas afectadas.
         """)
 
-    with tab5:
-        st.subheader("5. Reflexión crítica y cierre del proyecto")
+        st.markdown("### Medidas de mitigación implementadas")
         st.markdown("""
-La **Prueba de Concepto (PoC)** que se muestra en esta aplicación de Streamlit no solo demuestra
-la viabilidad técnica del sistema de clasificación de mensajes, sino que se conecta de manera
-directa con:
+- **Auditoría algorítmica semestral**.
+- Validación cruzada para **subgrupos lingüísticos**.
+- Métricas de **equidad** y tasas de error balanceadas entre categorías.
+- Identificación y análisis de **outliers** (casos atípicos).
+- **Reporte interno** para TEVV (Testing, Evaluation, Verification and Validation) y mejora continua.
+- Recomendación de contar con una **póliza de responsabilidad civil** frente a terceros.
+        """)
 
-- El **documento fundacional** (definición de problema, objetivos, hipótesis, ruta técnica).
-- La **simulación de auditoría legal** y el análisis jurídico (entrevista, riesgos, sesgos, transparencia).
-- El **documento técnico de implementación** (AI Act, DHS Framework, LFPDPPP, QMS, POE, gobernanza).
+        st.subheader("Actualización y Gobernanza del Sistema")
+        st.markdown("### Control de versiones")
+        st.markdown("""
+- Registro de cada **iteración del modelo**.
+- Validaciones técnicas, legales y éticas antes del despliegue.
+- Análisis de impacto y evidencia de pruebas.
+- Aprobación por parte de la figura de **AI Compliance Officer**.
+        """)
 
-Desde la perspectiva interdisciplinaria:
+        st.markdown("### Post-despliegue")
+        st.markdown("""
+- Monitoreo de **drift** (cambio en patrones de lenguaje y datos).
+- Detección de comportamientos anómalos.
+- Mecanismo de **rollback** para regresar a versiones estables si alguna actualización:
+  - Degrada la exactitud,
+  - Afecta la seguridad,
+  - O reduce la transparencia.
+        """)
 
-- La parte **técnica** asegura que el modelo funcione, sea medible y pueda integrarse en flujos reales.
-- La parte **legal y de compliance** asegura que el sistema se diseñe desde el inicio con
-  protección de datos, transparencia, supervisión humana y responsabilidad clara.
-- La parte **ética** refuerza la idea de que la IA debe complementar, y no reemplazar, el juicio humano,
-  evitando sesgos, discriminación o impactos negativos en derechos fundamentales.
+    # ---------------- TAB 5: Ética, responsabilidad y conclusiones ----------------
+    with tab5:
+        st.subheader("Enfoque Ético Integral")
 
-En conjunto, el proyecto cumple con el objetivo del curso: presentar un sistema de IA para atención
-al cliente que no solo sea técnicamente sólido, sino también jurídicamente defensible y alineado
-con los marcos regulatorios y éticos contemporáneos.
+        st.markdown("### Documento ético accesible a usuarios")
+        st.markdown("""
+El proyecto contempla un documento ético que explique:
+
+- La **visión ética** del sistema y los valores que lo guían:
+  - Dignidad,
+  - Igualdad,
+  - No discriminación,
+  - Transparencia,
+  - Responsabilidad social.
+- Basado en:
+  - La **Constitución Mexicana** (parte dogmática),
+  - Tratados internacionales de **derechos humanos**.
+        """)
+
+        st.markdown("### Marco ético operativo")
+        st.markdown("""
+- Uso **responsable** de datos.
+- Límites funcionales del sistema (solo apoyo a clasificación, sin decisiones finales).
+- **Explicabilidad mínima** garantizada hacia usuarios y auditores.
+- **Revisión humana obligatoria** en casos de baja confianza o alto impacto.
+- Evaluación ética **anual** sobre el impacto real del sistema.
+- Restricciones estrictas frente a:
+  - Usos prohibidos,
+  - Desvíos de finalidad,
+  - O aplicaciones que comprometan derechos fundamentales.
+        """)
+
+        st.subheader("Responsabilidad y Riesgos Jurídicos")
+        st.markdown("""
+- El sistema **no tiene voluntad propia** → la responsabilidad recae en:
+  - Quienes lo diseñan,
+  - Quienes lo operan,
+  - Y la empresa que decide implementarlo.
+- Los riesgos se mitigan mediante:
+  - **Transparencia reforzada**,
+  - Auditorías semestrales,
+  - Trazabilidad documentada,
+  - Medidas de seguridad robustas,
+  - Revisión humana constante.
+
+En el contexto mexicano, la ausencia de una ley específica de IA se compensa con:
+
+- Regulación de **datos personales**,
+- **Derechos humanos**,
+- **Responsabilidad civil**,
+- Normativa de **protección al consumidor**.
+        """)
+
+        st.subheader("Conclusiones del Cumplimiento")
+        st.markdown("""
+- El sistema está razonablemente clasificado como de **riesgo limitado**.
+- Cumple con las obligaciones del **AI Act** en:
+  - Transparencia,
+  - Gobernanza,
+  - Documentación proporcional al riesgo.
+- Se encuentra alineado con la **LFPDPPP** en:
+  - Aviso de privacidad,
+  - Seguridad de datos,
+  - Ejercicio de derechos ARCO.
+- Cuenta con estrategias sólidas contra sesgos, con **auditorías periódicas** y métricas de equidad.
+- Integra un **marco ético operativo**, con revisión anual y enfoque en no discriminación.
+- El proyecto refleja una visión **interdisciplinaria** Derecho + Ingeniería:
+  - Se demuestra **cumplimiento**,  
+  - **Responsabilidad**,  
+  - Y **trazabilidad** técnica y jurídica del sistema.
         """)
